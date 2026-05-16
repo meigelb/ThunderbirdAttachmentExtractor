@@ -16,7 +16,7 @@ browser.menus.onClicked.addListener(onClicked);
  * Helper function to find the full mime details of a part.
  */
 function findPart(parts, partName) {
-	for (let part of parts || []) {
+	for (const part of parts || []) {
 		if (part.partName == partName) {
 			return part;
 		}
@@ -32,10 +32,17 @@ function findPart(parts, partName) {
  * Helper function for getting attachment details from a message.
  */
 const getMessageAttachmentDetails = async function(message) {
+	const messageDetails = `for message ${message.date.toLocaleString()} "${message.subject}"`;
 	return {
 		message,
-		attachments: await browser.messages.listAttachments(message.id),
-		full: await browser.messages.getFull(message.id),
+		attachments: await browser.messages.listAttachments(message.id).catch(e => {
+			console.warn(`Failed to list attachments ${messageDetails}:`, e);
+			return [];
+		}),
+		full: await browser.messages.getFull(message.id).catch(e => {
+			console.warn(`Failed to get full message ${messageDetails}:`, e);
+			return null;
+		}),
 	};
 }
 
@@ -44,7 +51,7 @@ async function getAttachmentDetailsOfSelectedMessages(info) {
 
 	// Get first page of messages
 	let currentPage = info.selectedMessages;
-	if (currentPage.messages.length == 0){
+	if (currentPage.messages.length == 0) {
 		browser.attachmentExtractorApi.showAlertToUser("Oops", "No message selected. Please select a message (or multiple) with an attachment.");
 		return;
 	}
